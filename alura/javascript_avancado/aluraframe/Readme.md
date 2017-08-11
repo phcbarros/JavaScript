@@ -101,3 +101,69 @@ Obs.: Sempre que alteramos o método onupgradeneeded é necessário apagar o ban
 ```javascript
 var openRequest = window.indexedDB.open('meuBanco', 2);
 ```
+
+## Recuperando dados da ObjectStore
+
+Para recuperar os dados da objectStore temos que criar a transação, pegar a objectStore da qual queremos pegar os dados igual é feito adicionar.
+
+```javascript 
+const transaction = connection.transaction(['person'], 'readonly');
+const store = transaction.objectStore('person');
+```
+
+Feito isso vamos precisar pegar o cursor que é o ponteiro responsável pela navegação entre os registros salvos na store.
+
+```javascript
+const cursor = store.openCursor();
+```
+
+Recuperado o cursor vamos usar o método **_onsuccess()_** do mesmo para iterar sobre os itens da store. Dentro desse método pegamos a posição atual do cursor e verificamos se possui dados, tendo dados, criamos o objeto Person e o adicionamos na lista de pessoas e por fim vamos para o próximo registro usando o método **_continue()_**. Caso não tenha mais registros exibimos a lista de pessoas no console.
+
+```javascript
+let people = [];
+
+cursor.onsuccess = e => {
+    const current = e.target.result;
+
+    if (current) { 
+        const { name, age } = current.value;
+        people.push(new Person(name, age))
+        current.continue();
+    }
+    else {
+        console.table(people);
+    }
+};
+```
+
+Usamos o método **_onerror()_** do cursor para exibirmos o erro ocorrido.
+
+```javascript
+cursor.onerror = e => (console.log(e.target.error.name));
+```
+
+Por fim temos o seguinte código:
+
+```javascript
+function getAll() {
+    const transaction = connection.transaction(['person'], 'readonly');
+    const store = transaction.objectStore('person');
+    const cursor = store.openCursor();
+    let people = [];
+
+    cursor.onsuccess = e => {
+        const current = e.target.result;
+
+        if (current) { 
+            const { name, age } = current.value;
+            people.push(new Person(name, age))
+            current.continue();
+        }
+        else {
+            console.table(people);
+        }
+    };
+    
+    cursor.onerror = e => (console.log(e.target.error.name));
+}
+```
